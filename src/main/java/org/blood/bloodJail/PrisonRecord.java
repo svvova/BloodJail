@@ -14,17 +14,17 @@ public class PrisonRecord {
     private final String jailedBy;
     private final String reason;
     private final long jailedAtMillis;
-    private final long releaseAtMillis;
+    private long remainingMillis;
     private final Location arrestLocation;
 
     public PrisonRecord(UUID playerId, String playerName, String jailedBy, String reason,
-                        long jailedAtMillis, long releaseAtMillis, Location arrestLocation) {
+                        long jailedAtMillis, long remainingMillis, Location arrestLocation) {
         this.playerId = playerId;
         this.playerName = playerName;
         this.jailedBy = jailedBy;
         this.reason = reason;
         this.jailedAtMillis = jailedAtMillis;
-        this.releaseAtMillis = releaseAtMillis;
+        this.remainingMillis = Math.max(0L, remainingMillis);
         this.arrestLocation = arrestLocation == null ? null : arrestLocation.clone();
     }
 
@@ -48,20 +48,29 @@ public class PrisonRecord {
         return jailedAtMillis;
     }
 
-    public long getReleaseAtMillis() {
-        return releaseAtMillis;
+    public long getRemainingMillisStored() {
+        return remainingMillis;
     }
 
     public Location getArrestLocation() {
         return arrestLocation == null ? null : arrestLocation.clone();
     }
 
-    public long getRemainingMillis(long nowMillis) {
-        return Math.max(0L, releaseAtMillis - nowMillis);
+    public long getRemainingMillis(long ignoredNowMillis) {
+        return Math.max(0L, remainingMillis);
     }
 
-    public boolean isExpired(long nowMillis) {
-        return nowMillis >= releaseAtMillis;
+    public boolean isExpired(long ignoredNowMillis) {
+        return remainingMillis <= 0L;
+    }
+
+    public long decreaseRemainingMillis(long millis) {
+        if (millis <= 0L) {
+            return remainingMillis;
+        }
+
+        remainingMillis = Math.max(0L, remainingMillis - millis);
+        return remainingMillis;
     }
 
     public void writeTo(ConfigurationSection section) {
@@ -69,7 +78,7 @@ public class PrisonRecord {
         section.set("jailedBy", jailedBy);
         section.set("reason", reason);
         section.set("jailedAt", jailedAtMillis);
-        section.set("releaseAt", releaseAtMillis);
+        section.set("remainingMillis", remainingMillis);
 
         if (arrestLocation != null && arrestLocation.getWorld() != null) {
             section.set("arrest.world", arrestLocation.getWorld().getName());
@@ -82,11 +91,17 @@ public class PrisonRecord {
     }
 
     public static PrisonRecord readFrom(UUID playerId, ConfigurationSection section) {
-        String playerName = section.getString("playerName", "unknown");
-        String jailedBy = section.getString("jailedBy", "unknown");
-        String reason = section.getString("reason", "no reason");
+        String playerName = section.getString("playerName", "неизвестно");
+        String jailedBy = section.getString("jailedBy", "неизвестно");
+        String reason = section.getString("reason", "без причины");
         long jailedAt = section.getLong("jailedAt", System.currentTimeMillis());
-        long releaseAt = section.getLong("releaseAt", jailedAt);
+        long remainingMillis;
+        if (section.contains("remainingMillis")) {
+            remainingMillis = Math.max(0L, section.getLong("remainingMillis", 0L));
+        } else {
+            long releaseAt = section.getLong("releaseAt", jailedAt);
+            remainingMillis = Math.max(0L, releaseAt - System.currentTimeMillis());
+        }
 
         String worldName = section.getString("arrest.world");
         Location arrestLocation = null;
@@ -102,7 +117,7 @@ public class PrisonRecord {
             }
         }
 
-        return new PrisonRecord(playerId, playerName, jailedBy, reason, jailedAt, releaseAt, arrestLocation);
+        return new PrisonRecord(playerId, playerName, jailedBy, reason, jailedAt, remainingMillis, arrestLocation);
     }
 }
 

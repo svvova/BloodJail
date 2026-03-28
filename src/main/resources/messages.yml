@@ -8,13 +8,13 @@ errors:
   jail-world-not-loaded: "<prefix><white>Мир тюрьмы не загружен. Проверьте </white><#ff8c00>config.yml</#ff8c00><white>.</white>"
 
 usage:
-  prison: "<prefix><white>Использование: </white><#ff8c00>/prison <игрок> <время> <причина></#ff8c00>"
-  unprison: "<prefix><white>Использование: </white><#ff8c00>/unprison <игрок></#ff8c00>"
-  checkprison: "<prefix><white>Использование: </white><#ff8c00>/checkprison <игрок></#ff8c00>"
+  prison: "<prefix><white>Использование: </white><#ff8c00>/prison [игрок] [время] [причина]</#ff8c00>"
+  unprison: "<prefix><white>Использование: </white><#ff8c00>/unprison [игрок]</#ff8c00>"
+  checkprison: "<prefix><white>Использование: </white><#ff8c00>/checkprison [игрок]</#ff8c00>"
 
 prison:
   already-jailed: "<prefix><white>Этот игрок уже находится в тюрьме.</white>"
-  broadcast: "<prefix><white><player> был(а) посажен(а) в тюрьму игроком <jailedBy> на <time>. Причина: <reason></white>"
+  broadcast: "<prefix><white><player> был(а) посажен(а) в тюрьму игроком <jailed-by> на <time>. Причина: <reason></white>"
   personal: "<prefix><white>Вы посажены в тюрьму на <time>. Причина: <reason></white>"
 
 unprison:
@@ -25,7 +25,7 @@ check:
   not-jailed: "<prefix><white>Игрок <player> не находится в тюрьме.</white>"
   info:
     player: "<prefix><white>Игрок: <player></white>"
-    jailed-by: "<prefix><white>Посадил: <jailedBy></white>"
+    jailed-by: "<prefix><white>Посадил: <jailed-by></white>"
     reason: "<prefix><white>Причина: <reason></white>"
     remaining: "<prefix><white>Осталось: <time></white>"
     remaining-expired: "<prefix><white>Осталось: 0с (ожидается вход игрока для освобождения)</white>"

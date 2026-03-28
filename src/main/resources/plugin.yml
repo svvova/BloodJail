@@ -2,3 +2,47 @@ name: BloodJail
 version: '1.0'
 main: org.blood.bloodJail.BloodJail
 api-version: '1.21'
+
+commands:
+  prison:
+    description: Jail a player
+    usage: /prison <player> <time> <reason>
+    permission: bloodjail.command.prison
+  unprison:
+    description: Release a jailed player
+    usage: /unprison <player>
+    permission: bloodjail.command.unprison
+  checkprison:
+    description: Check jail status
+    usage: /checkprison <player>
+    permission: bloodjail.command.checkprison
+  setprison:
+    description: Set fixed jail location to your current position
+    usage: /setprison
+    permission: bloodjail.command.setprison
+
+permissions:
+  bloodjail.*:
+    description: Full access to all BloodJail commands and bypass
+    default: op
+    children:
+      bloodjail.command.prison: true
+      bloodjail.command.unprison: true
+      bloodjail.command.checkprison: true
+      bloodjail.command.setprison: true
+      bloodjail.bypass: true
+  bloodjail.command.prison:
+    description: Allows using /prison
+    default: op
+  bloodjail.command.unprison:
+    description: Allows using /unprison
+    default: op
+  bloodjail.command.checkprison:
+    description: Allows checking players via /checkprison <player>
+    default: op
+  bloodjail.command.setprison:
+    description: Allows setting jail point via /setprison
+    default: op
+  bloodjail.bypass:
+    description: Bypass jail restrictions
+    default: op

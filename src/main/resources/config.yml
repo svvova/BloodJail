@@ -1,4 +1,4 @@
-# Jail teleport point. Change this to your prison cell coordinates.
+# Fixed jail teleport point. Use /setprison in-game to update it.
 jail:
   world: world
   x: 0.5

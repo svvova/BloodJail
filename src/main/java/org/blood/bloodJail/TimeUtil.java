@@ -16,7 +16,8 @@ public final class TimeUtil {
             return null;
         }
 
-        Matcher matcher = PART_PATTERN.matcher(input.trim());
+        String valueInput = input.trim();
+        Matcher matcher = PART_PATTERN.matcher(valueInput);
         long totalMillis = 0L;
         int cursor = 0;
 
@@ -58,7 +59,7 @@ public final class TimeUtil {
             }
         }
 
-        if (cursor != input.length() || totalMillis <= 0L) {
+        if (cursor != valueInput.length()) {
             return null;
         }
 
@@ -75,15 +76,14 @@ public final class TimeUtil {
         seconds %= 60L;
 
         if (days > 0L) {
-            return days + "d " + hours + "h " + minutes + "m";
+            return days + "д " + hours + "ч " + minutes + "м";
         }
         if (hours > 0L) {
-            return hours + "h " + minutes + "m " + seconds + "s";
+            return hours + "ч " + minutes + "м " + seconds + "с";
         }
         if (minutes > 0L) {
-            return minutes + "m " + seconds + "s";
+            return minutes + "м " + seconds + "с";
         }
-        return seconds + "s";
+        return seconds + "с";
     }
 }
-

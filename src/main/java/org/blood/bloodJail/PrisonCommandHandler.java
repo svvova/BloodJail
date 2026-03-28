@@ -19,10 +19,12 @@ public class PrisonCommandHandler implements CommandExecutor, TabCompleter {
 
     private final BloodJail plugin;
     private final PrisonManager prisonManager;
+    private final MessageService messages;
 
     public PrisonCommandHandler(BloodJail plugin, PrisonManager prisonManager) {
         this.plugin = plugin;
         this.prisonManager = prisonManager;
+        this.messages = plugin.getMessageService();
     }
 
     @Override
@@ -35,6 +37,8 @@ public class PrisonCommandHandler implements CommandExecutor, TabCompleter {
                 return handleUnprison(sender, args);
             case "checkprison":
                 return handleCheckPrison(sender, args);
+            case "setprison":
+                return handleSetPrison(sender);
             default:
                 return false;
         }
@@ -42,35 +46,35 @@ public class PrisonCommandHandler implements CommandExecutor, TabCompleter {
 
     private boolean handlePrison(CommandSender sender, String[] args) {
         if (!sender.hasPermission("bloodjail.command.prison")) {
-            sender.sendMessage("[BloodJail] You do not have permission.");
+            messages.send(sender, "errors.no-permission");
             return true;
         }
 
         if (args.length < 3) {
-            sender.sendMessage("[BloodJail] Usage: /prison <player> <time> <reason>");
+            messages.send(sender, "usage.prison");
             return true;
         }
 
         Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) {
-            sender.sendMessage("[BloodJail] Player is not online.");
+            messages.send(sender, "errors.player-offline");
             return true;
         }
 
         if (prisonManager.isJailed(target.getUniqueId())) {
-            sender.sendMessage("[BloodJail] This player is already in jail.");
+            messages.send(sender, "prison.already-jailed");
             return true;
         }
 
         Duration duration = TimeUtil.parseDuration(args[1]);
         if (duration == null || duration.isZero() || duration.isNegative()) {
-            sender.sendMessage("[BloodJail] Invalid time format. Example: 1m, 10m, 1h, 2d, 1h30m");
+            messages.send(sender, "errors.invalid-time");
             return true;
         }
 
         Location jailLocation = plugin.getJailLocation();
         if (jailLocation == null) {
-            sender.sendMessage("[BloodJail] Jail world is not loaded. Check config.yml.");
+            messages.send(sender, "errors.jail-world-not-loaded");
             return true;
         }
 
@@ -81,72 +85,65 @@ public class PrisonCommandHandler implements CommandExecutor, TabCompleter {
         target.teleport(jailLocation);
 
         String formatted = TimeUtil.formatCompactDuration(duration.toMillis());
-        Bukkit.broadcastMessage("[BloodJail] " + target.getName() + " was jailed by " + jailedBy
-                + " for " + formatted + ". Reason: " + reason);
-        target.sendMessage("[BloodJail] You are jailed for " + formatted + ". Reason: " + reason);
+        messages.broadcast("prison.broadcast", "player", target.getName(), "jailed-by", jailedBy, "time", formatted, "reason", reason);
+        messages.send(target, "prison.personal", "time", formatted, "reason", reason);
 
         return true;
     }
 
     private boolean handleUnprison(CommandSender sender, String[] args) {
         if (!sender.hasPermission("bloodjail.command.unprison")) {
-            sender.sendMessage("[BloodJail] You do not have permission.");
+            messages.send(sender, "errors.no-permission");
             return true;
         }
 
         if (args.length < 1) {
-            sender.sendMessage("[BloodJail] Usage: /unprison <player>");
+            messages.send(sender, "usage.unprison");
             return true;
         }
 
         Player target = Bukkit.getPlayerExact(args[0]);
         if (target == null) {
-            sender.sendMessage("[BloodJail] Player is not online.");
+            messages.send(sender, "errors.player-offline");
             return true;
         }
 
         if (!prisonManager.isJailed(target.getUniqueId())) {
-            sender.sendMessage("[BloodJail] This player is not jailed.");
+            messages.send(sender, "unprison.not-jailed");
             return true;
         }
 
-        plugin.releasePlayer(target, "manual release by " + sender.getName(), true);
-        sender.sendMessage("[BloodJail] Player was released.");
+        plugin.releasePlayer(target, "досрочно освобожден администратором " + sender.getName(), true);
+        messages.send(sender, "unprison.done", "player", target.getName());
         return true;
     }
 
     private boolean handleCheckPrison(CommandSender sender, String[] args) {
-        Player targetPlayer = null;
-
-        if (args.length == 0) {
-            if (sender instanceof Player) {
-                targetPlayer = (Player) sender;
-            } else {
-                sender.sendMessage("[BloodJail] Usage: /checkprison <player>");
-                return true;
-            }
-        } else {
-            if (!sender.hasPermission("bloodjail.command.checkprison.others")) {
-                sender.sendMessage("[BloodJail] You do not have permission to check other players.");
-                return true;
-            }
-            targetPlayer = Bukkit.getPlayerExact(args[0]);
+        if (!sender.hasPermission("bloodjail.command.checkprison")) {
+            messages.send(sender, "errors.no-permission");
+            return true;
         }
 
+        if (args.length != 1) {
+            messages.send(sender, "usage.checkprison");
+            return true;
+        }
+
+        Player targetPlayer = Bukkit.getPlayerExact(args[0]);
         if (targetPlayer != null) {
-            PrisonRecord record = prisonManager.getRecord(targetPlayer.getUniqueId());
-            if (record == null) {
-                sender.sendMessage("[BloodJail] " + targetPlayer.getName() + " is not jailed.");
+            PrisonRecord onlineRecord = prisonManager.getRecord(targetPlayer.getUniqueId());
+            if (onlineRecord == null) {
+                messages.send(sender, "check.not-jailed", "player", targetPlayer.getName());
                 return true;
             }
-            sendRecordInfo(sender, record);
+            sendRecordInfo(sender, onlineRecord);
             return true;
         }
 
         // Offline fallback by stored name when player is not currently online.
         PrisonRecord record = prisonManager.findByPlayerName(args[0]);
         if (record == null) {
-            sender.sendMessage("[BloodJail] Player is not jailed.");
+            messages.send(sender, "check.not-jailed", "player", args[0]);
             return true;
         }
 
@@ -154,22 +151,47 @@ public class PrisonCommandHandler implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private boolean handleSetPrison(CommandSender sender) {
+        if (!sender.hasPermission("bloodjail.command.setprison")) {
+            messages.send(sender, "errors.no-permission");
+            return true;
+        }
+        if (!(sender instanceof Player)) {
+            messages.send(sender, "setprison.only-player");
+            return true;
+        }
+
+        Player player = (Player) sender;
+        Location location = player.getLocation();
+
+        plugin.getConfig().set("jail.world", location.getWorld() != null ? location.getWorld().getName() : "world");
+        plugin.getConfig().set("jail.x", location.getX());
+        plugin.getConfig().set("jail.y", location.getY());
+        plugin.getConfig().set("jail.z", location.getZ());
+        plugin.getConfig().set("jail.yaw", location.getYaw());
+        plugin.getConfig().set("jail.pitch", location.getPitch());
+        plugin.saveConfig();
+
+        messages.send(sender, "setprison.done");
+        return true;
+    }
+
     private void sendRecordInfo(CommandSender sender, PrisonRecord record) {
         long remaining = record.getRemainingMillis(System.currentTimeMillis());
-        sender.sendMessage("[BloodJail] Player: " + record.getPlayerName());
-        sender.sendMessage("[BloodJail] Jailed by: " + record.getJailedBy());
-        sender.sendMessage("[BloodJail] Reason: " + record.getReason());
+        messages.send(sender, "check.info.player", "player", record.getPlayerName());
+        messages.send(sender, "check.info.jailed-by", "jailed-by", record.getJailedBy());
+        messages.send(sender, "check.info.reason", "reason", record.getReason());
         if (remaining <= 0L) {
-            sender.sendMessage("[BloodJail] Remaining: 0s (waiting for login to release)");
+            messages.send(sender, "check.info.remaining-expired");
         } else {
-            sender.sendMessage("[BloodJail] Remaining: " + TimeUtil.formatCompactDuration(remaining));
+            messages.send(sender, "check.info.remaining", "time", TimeUtil.formatCompactDuration(remaining));
         }
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         String cmd = command.getName().toLowerCase(Locale.ROOT);
-        if (args.length == 1) {
+        if (args.length == 1 && ("prison".equals(cmd) || "unprison".equals(cmd) || "checkprison".equals(cmd))) {
             String partial = args[0].toLowerCase(Locale.ROOT);
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)

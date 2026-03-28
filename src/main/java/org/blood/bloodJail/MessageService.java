@@ -12,8 +12,12 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class MessageService {
 
@@ -29,12 +33,26 @@ public class MessageService {
     public void load() {
         File file = new File(plugin.getDataFolder(), "messages.yml");
         this.messages = YamlConfiguration.loadConfiguration(file);
+
+        InputStream resource = plugin.getResource("messages.yml");
+        if (resource != null) {
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(new InputStreamReader(resource, StandardCharsets.UTF_8));
+            this.messages.setDefaults(defaults);
+        }
+
+        if (migrateLegacyMessages()) {
+            try {
+                this.messages.save(file);
+            } catch (Exception ex) {
+                plugin.getLogger().warning("Не удалось сохранить обновленный messages.yml: " + ex.getMessage());
+            }
+        }
     }
 
     public void send(CommandSender sender, String key, String... placeholders) {
         Component component = get(key, placeholders);
-        if (sender instanceof Player) {
-            ((Player) sender).sendMessage(component);
+        if (sender instanceof Player player) {
+            player.sendMessage(component);
             return;
         }
 
@@ -62,10 +80,62 @@ public class MessageService {
         resolvers.add(Placeholder.parsed("prefix", prefixTemplate));
 
         for (int i = 0; i + 1 < placeholders.length; i += 2) {
-            resolvers.add(Placeholder.unparsed(placeholders[i], placeholders[i + 1]));
+            String name = normalizePlaceholderName(placeholders[i]);
+            String value = placeholders[i + 1];
+            resolvers.add(Placeholder.component(name, Component.text(value)));
         }
 
         return miniMessage.deserialize(template, resolvers.toArray(new TagResolver[0]));
     }
+
+    private String normalizePlaceholderName(String name) {
+        return name.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_-]", "-");
+    }
+
+    private boolean migrateLegacyMessages() {
+        boolean changed = false;
+
+        changed |= replaceIfContains("prison.broadcast", "<jailedBy>", "<jailed-by>");
+        changed |= replaceIfContains("check.info.jailed-by", "<jailedBy>", "<jailed-by>");
+
+        changed |= forceValueIfDifferent("usage.prison",
+                "<prefix><white>Использование: </white><#ff8c00>/prison [игрок] [время] [причина]</#ff8c00>");
+        changed |= forceValueIfDifferent("usage.unprison",
+                "<prefix><white>Использование: </white><#ff8c00>/unprison [игрок]</#ff8c00>");
+        changed |= forceValueIfDifferent("usage.checkprison",
+                "<prefix><white>Использование: </white><#ff8c00>/checkprison [игрок]</#ff8c00>");
+
+        return changed;
+    }
+
+    private boolean replaceIfContains(String path, String target, String replacement) {
+        String current = messages.getString(path);
+        if (current == null || !current.contains(target)) {
+            return false;
+        }
+
+        messages.set(path, current.replace(target, replacement));
+        return true;
+    }
+
+    private boolean forceValueIfDifferent(String path, String expectedValue) {
+        String current = messages.getString(path);
+        if (expectedValue.equals(current)) {
+            return false;
+        }
+
+        if (current == null
+                || current.contains("&lt;")
+                || current.contains("\\<")
+                || current.contains("<игрок>")
+                || current.contains("<время>")
+                || current.contains("<причина>")) {
+            messages.set(path, expectedValue);
+            return true;
+        }
+
+        return false;
+    }
 }
+
 

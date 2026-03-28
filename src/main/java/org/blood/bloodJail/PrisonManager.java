@@ -26,6 +26,7 @@ public class PrisonManager {
 
     public void load() {
         records.clear();
+        boolean migratedLegacyData = false;
 
         if (!storageFile.exists()) {
             return;
@@ -44,11 +45,18 @@ public class PrisonManager {
                 if (section == null) {
                     continue;
                 }
+                if (!section.contains("remainingMillis") && section.contains("releaseAt")) {
+                    migratedLegacyData = true;
+                }
                 PrisonRecord record = PrisonRecord.readFrom(uuid, section);
                 records.put(uuid, record);
             } catch (IllegalArgumentException ignored) {
                 // Skip malformed UUID keys.
             }
+        }
+
+        if (migratedLegacyData) {
+            save();
         }
     }
 
@@ -73,14 +81,13 @@ public class PrisonManager {
 
     public PrisonRecord jailPlayer(Player target, String jailedBy, Duration duration, String reason) {
         long now = System.currentTimeMillis();
-        long releaseAt = now + duration.toMillis();
         PrisonRecord record = new PrisonRecord(
                 target.getUniqueId(),
                 target.getName(),
                 jailedBy,
                 reason,
                 now,
-                releaseAt,
+                duration.toMillis(),
                 target.getLocation().clone()
         );
 
