@@ -1,0 +1,4 @@
+name: BloodJail
+version: '1.0'
+main: org.blood.bloodJail.BloodJail
+api-version: '1.21'

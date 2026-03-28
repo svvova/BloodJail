@@ -1,0 +1,49 @@
+# Orange-white style for all plugin messages (MiniMessage format).
+prefix: "<#ff8c00><bold>BloodJail</bold></#ff8c00><white> | </white>"
+
+errors:
+  no-permission: "<prefix><white>У вас нет прав для этой команды.</white>"
+  player-offline: "<prefix><white>Игрок не в сети.</white>"
+  invalid-time: "<prefix><white>Неверный формат времени.</white> <#ff8c00>Пример:</#ff8c00> <white>1m, 10m, 1h, 2d, 1h30m</white>"
+  jail-world-not-loaded: "<prefix><white>Мир тюрьмы не загружен. Проверьте </white><#ff8c00>config.yml</#ff8c00><white>.</white>"
+
+usage:
+  prison: "<prefix><white>Использование: </white><#ff8c00>/prison <игрок> <время> <причина></#ff8c00>"
+  unprison: "<prefix><white>Использование: </white><#ff8c00>/unprison <игрок></#ff8c00>"
+  checkprison: "<prefix><white>Использование: </white><#ff8c00>/checkprison <игрок></#ff8c00>"
+
+prison:
+  already-jailed: "<prefix><white>Этот игрок уже находится в тюрьме.</white>"
+  broadcast: "<prefix><white><player> был(а) посажен(а) в тюрьму игроком <jailedBy> на <time>. Причина: <reason></white>"
+  personal: "<prefix><white>Вы посажены в тюрьму на <time>. Причина: <reason></white>"
+
+unprison:
+  not-jailed: "<prefix><white>Этот игрок не находится в тюрьме.</white>"
+  done: "<prefix><white>Игрок <player> освобожден.</white>"
+
+check:
+  not-jailed: "<prefix><white>Игрок <player> не находится в тюрьме.</white>"
+  info:
+    player: "<prefix><white>Игрок: <player></white>"
+    jailed-by: "<prefix><white>Посадил: <jailedBy></white>"
+    reason: "<prefix><white>Причина: <reason></white>"
+    remaining: "<prefix><white>Осталось: <time></white>"
+    remaining-expired: "<prefix><white>Осталось: 0с (ожидается вход игрока для освобождения)</white>"
+
+setprison:
+  only-player: "<prefix><white>Эту команду можно использовать только в игре.</white>"
+  done: "<prefix><white>Точка тюрьмы обновлена в </white><#ff8c00>config.yml</#ff8c00><white>.</white>"
+
+jail:
+  timer: "<#ff8c00><bold>Тюрьма</bold></#ff8c00><white>: до освобождения </white><#ff8c00><time></#ff8c00>"
+  still-jailed: "<prefix><white>Вы все еще в тюрьме. Осталось: <time></white>"
+  block:
+    chat: "<prefix><white>В тюрьме нельзя писать в чат.</white>"
+    drop: "<prefix><white>В тюрьме нельзя выбрасывать предметы.</white>"
+    fight: "<prefix><white>В тюрьме нельзя драться.</white>"
+    victim-protected: "<prefix><white>Этот игрок находится в тюрьме. Бой запрещен.</white>"
+
+release:
+  personal: "<prefix><white>Вы были освобождены.</white>"
+  broadcast: "<prefix><white><player> освобожден(а). Причина: <reason>.</white>"
+

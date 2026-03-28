@@ -1,0 +1,9 @@
+# Jail teleport point. Change this to your prison cell coordinates.
+jail:
+  world: world
+  x: 0.5
+  y: 100.0
+  z: 0.5
+  yaw: 0.0
+  pitch: 0.0
+
