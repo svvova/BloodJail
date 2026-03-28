@@ -2,6 +2,7 @@ package org.blood.bloodJail;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -55,9 +56,10 @@ public class PrisonCommandHandler implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        Player target = Bukkit.getPlayerExact(args[0]);
+        Player online = Bukkit.getPlayerExact(args[0]);
+        OfflinePlayer target = online != null ? online : prisonManager.findOfflineByName(args[0]);
         if (target == null) {
-            messages.send(sender, "errors.player-offline");
+            messages.send(sender, "errors.player-not-found");
             return true;
         }
 
@@ -82,11 +84,17 @@ public class PrisonCommandHandler implements CommandExecutor, TabCompleter {
         String jailedBy = sender.getName();
 
         prisonManager.jailPlayer(target, jailedBy, duration, reason);
-        target.teleport(jailLocation);
 
         String formatted = TimeUtil.formatCompactDuration(duration.toMillis());
-        messages.broadcast("prison.broadcast", "player", target.getName(), "jailed-by", jailedBy, "time", formatted, "reason", reason);
-        messages.send(target, "prison.personal", "time", formatted, "reason", reason);
+        String targetName = target.getName() == null ? args[0] : target.getName();
+        if (online != null && jailLocation != null) {
+            online.teleport(jailLocation);
+            messages.send(online, "prison.personal", "time", formatted, "reason", reason);
+        } else {
+            messages.send(sender, "prison.offline-queued", "player", targetName);
+        }
+
+        messages.broadcast("prison.broadcast", "player", targetName, "jailed-by", jailedBy, "time", formatted, "reason", reason);
 
         return true;
     }

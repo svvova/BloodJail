@@ -76,8 +76,14 @@ public class PrisonListener implements Listener {
         }
 
         if (record.isExpired(System.currentTimeMillis())) {
-            plugin.releasePlayer(player, "срок заключения истек", true);
+            plugin.releasePlayer(player, "СЃСЂРѕРє Р·Р°РєР»СЋС‡РµРЅРёСЏ РёСЃС‚РµРє", true);
             return;
+        }
+
+        if (record.shouldCaptureArrestOnJoin()) {
+            record.setArrestLocation(player.getLocation().clone());
+            record.setCaptureArrestOnJoin(false);
+            prisonManager.save();
         }
 
         if (plugin.getJailLocation() != null) {
@@ -101,4 +107,3 @@ public class PrisonListener implements Listener {
         return null;
     }
 }
-

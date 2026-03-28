@@ -15,10 +15,12 @@ public class PrisonRecord {
     private final String reason;
     private final long jailedAtMillis;
     private long remainingMillis;
-    private final Location arrestLocation;
+    private Location arrestLocation;
+    private boolean captureArrestOnJoin;
 
     public PrisonRecord(UUID playerId, String playerName, String jailedBy, String reason,
-                        long jailedAtMillis, long remainingMillis, Location arrestLocation) {
+                        long jailedAtMillis, long remainingMillis, Location arrestLocation,
+                        boolean captureArrestOnJoin) {
         this.playerId = playerId;
         this.playerName = playerName;
         this.jailedBy = jailedBy;
@@ -26,6 +28,7 @@ public class PrisonRecord {
         this.jailedAtMillis = jailedAtMillis;
         this.remainingMillis = Math.max(0L, remainingMillis);
         this.arrestLocation = arrestLocation == null ? null : arrestLocation.clone();
+        this.captureArrestOnJoin = captureArrestOnJoin;
     }
 
     public UUID getPlayerId() {
@@ -56,6 +59,10 @@ public class PrisonRecord {
         return arrestLocation == null ? null : arrestLocation.clone();
     }
 
+    public boolean shouldCaptureArrestOnJoin() {
+        return captureArrestOnJoin;
+    }
+
     public long getRemainingMillis(long ignoredNowMillis) {
         return Math.max(0L, remainingMillis);
     }
@@ -73,12 +80,21 @@ public class PrisonRecord {
         return remainingMillis;
     }
 
+    public void setArrestLocation(Location location) {
+        this.arrestLocation = location == null ? null : location.clone();
+    }
+
+    public void setCaptureArrestOnJoin(boolean captureArrestOnJoin) {
+        this.captureArrestOnJoin = captureArrestOnJoin;
+    }
+
     public void writeTo(ConfigurationSection section) {
         section.set("playerName", playerName);
         section.set("jailedBy", jailedBy);
         section.set("reason", reason);
         section.set("jailedAt", jailedAtMillis);
         section.set("remainingMillis", remainingMillis);
+        section.set("captureArrestOnJoin", captureArrestOnJoin);
 
         if (arrestLocation != null && arrestLocation.getWorld() != null) {
             section.set("arrest.world", arrestLocation.getWorld().getName());
@@ -117,7 +133,9 @@ public class PrisonRecord {
             }
         }
 
-        return new PrisonRecord(playerId, playerName, jailedBy, reason, jailedAt, remainingMillis, arrestLocation);
+        boolean captureArrestOnJoin = section.getBoolean("captureArrestOnJoin", arrestLocation == null);
+        return new PrisonRecord(playerId, playerName, jailedBy, reason, jailedAt, remainingMillis, arrestLocation,
+                captureArrestOnJoin);
     }
 }
 

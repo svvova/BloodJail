@@ -1,8 +1,10 @@
 package org.blood.bloodJail;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
@@ -79,16 +81,24 @@ public class PrisonManager {
         }
     }
 
-    public PrisonRecord jailPlayer(Player target, String jailedBy, Duration duration, String reason) {
-        long now = System.currentTimeMillis();
+    public PrisonRecord jailPlayer(OfflinePlayer target, String jailedBy, Duration duration, String reason) {
+        Location arrestLocation = null;
+        boolean captureOnJoin = true;
+
+        if (target.isOnline() && target.getPlayer() != null) {
+            arrestLocation = target.getPlayer().getLocation().clone();
+            captureOnJoin = false;
+        }
+
         PrisonRecord record = new PrisonRecord(
                 target.getUniqueId(),
-                target.getName(),
+                target.getName() != null ? target.getName() : "unknown",
                 jailedBy,
                 reason,
-                now,
+                System.currentTimeMillis(),
                 duration.toMillis(),
-                target.getLocation().clone()
+                arrestLocation,
+                captureOnJoin
         );
 
         records.put(target.getUniqueId(), record);
@@ -115,8 +125,18 @@ public class PrisonManager {
     public PrisonRecord findByPlayerName(String name) {
         String lower = name.toLowerCase(Locale.ROOT);
         for (PrisonRecord record : records.values()) {
-            if (record.getPlayerName().toLowerCase(Locale.ROOT).equals(lower)) {
+            if (record.getPlayerName() != null && record.getPlayerName().toLowerCase(Locale.ROOT).equals(lower)) {
                 return record;
+            }
+        }
+        return null;
+    }
+
+    public OfflinePlayer findOfflineByName(String name) {
+        String lower = name.toLowerCase(Locale.ROOT);
+        for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
+            if (player.getName() != null && player.getName().toLowerCase(Locale.ROOT).equals(lower)) {
+                return player;
             }
         }
         return null;
