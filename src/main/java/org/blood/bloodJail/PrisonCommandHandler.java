@@ -87,7 +87,7 @@ public class PrisonCommandHandler implements CommandExecutor, TabCompleter {
 
         String formatted = TimeUtil.formatCompactDuration(duration.toMillis());
         String targetName = target.getName() == null ? args[0] : target.getName();
-        if (online != null && jailLocation != null) {
+        if (online != null) {
             online.teleport(jailLocation);
             messages.send(online, "prison.personal", "time", formatted, "reason", reason);
         } else {
@@ -110,9 +110,10 @@ public class PrisonCommandHandler implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        Player target = Bukkit.getPlayerExact(args[0]);
+        Player onlineTarget = Bukkit.getPlayerExact(args[0]);
+        OfflinePlayer target = onlineTarget != null ? onlineTarget : prisonManager.findOfflineByName(args[0]);
         if (target == null) {
-            messages.send(sender, "errors.player-offline");
+            messages.send(sender, "errors.player-not-found");
             return true;
         }
 
@@ -122,7 +123,8 @@ public class PrisonCommandHandler implements CommandExecutor, TabCompleter {
         }
 
         plugin.releasePlayer(target, "досрочно освобожден администратором " + sender.getName(), true);
-        messages.send(sender, "unprison.done", "player", target.getName());
+        String targetName = target.getName() != null ? target.getName() : args[0];
+        messages.send(sender, "unprison.done", "player", targetName);
         return true;
     }
 
@@ -148,7 +150,6 @@ public class PrisonCommandHandler implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // Offline fallback by stored name when player is not currently online.
         PrisonRecord record = prisonManager.findByPlayerName(args[0]);
         if (record == null) {
             messages.send(sender, "check.not-jailed", "player", args[0]);
@@ -218,4 +219,3 @@ public class PrisonCommandHandler implements CommandExecutor, TabCompleter {
         return Collections.emptyList();
     }
 }
-

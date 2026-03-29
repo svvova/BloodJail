@@ -2,6 +2,7 @@ package org.blood.bloodJail;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
@@ -61,19 +62,30 @@ public final class BloodJail extends JavaPlugin {
     }
 
     public void releasePlayer(Player player, String reasonLabel, boolean broadcast) {
+        releasePlayer((OfflinePlayer) player, reasonLabel, broadcast);
+    }
+
+    public void releasePlayer(OfflinePlayer player, String reasonLabel, boolean broadcast) {
         PrisonRecord record = prisonManager.unjail(player.getUniqueId());
         if (record == null) {
             return;
         }
 
-        Location returnLocation = record.getArrestLocation();
-        if (returnLocation != null && returnLocation.getWorld() != null) {
-            player.teleport(returnLocation);
-        }
+        Player onlinePlayer = player.getPlayer();
+        if (onlinePlayer != null) {
+            Location returnLocation = record.getArrestLocation();
+            if (returnLocation != null && returnLocation.getWorld() != null) {
+                onlinePlayer.teleport(returnLocation);
+            }
 
-        messageService.send(player, "release.personal");
+            messageService.send(onlinePlayer, "release.personal");
+        }
         if (broadcast) {
-            messageService.broadcast("release.broadcast", "player", player.getName(), "reason", reasonLabel);
+            String playerName = record.getPlayerName() != null ? record.getPlayerName() : player.getName();
+            if (playerName == null) {
+                playerName = player.getUniqueId().toString();
+            }
+            messageService.broadcast("release.broadcast", "player", playerName, "reason", reasonLabel);
         }
     }
 
